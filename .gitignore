@@ -63,12 +63,11 @@ runs/
 *.local.yaml
 *.local.yml
 *.local.json
+AGENTS.local.md
+
 
 # 临时文件。
 tmp/
 temp/
 *.tmp
 *.bak
-
-
-AGENTS.md
