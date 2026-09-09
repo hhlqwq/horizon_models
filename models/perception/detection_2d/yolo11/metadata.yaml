@@ -1,0 +1,24 @@
+model: YOLO11
+task: detection_2d
+framework: TBD
+source: TBD
+version: TBD
+license: TBD
+
+domains:
+  - general
+
+platforms:
+  j5: TBD
+  j6p: TBD
+  x5: TBD
+  s100: TBD
+
+deployment:
+  onnx: TBD
+  quantization: TBD
+  compile: TBD
+  python_runtime: TBD
+  cpp_runtime: TBD
+  accuracy: TBD
+  benchmark: TBD

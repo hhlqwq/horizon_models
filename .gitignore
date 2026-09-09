@@ -1,0 +1,71 @@
+# Python 缓存与虚拟环境。
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# IDE 与操作系统文件。
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 构建、编译与运行产物。
+build/
+dist/
+out/
+output/
+outputs/
+artifacts/
+cache/
+logs/
+*.log
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+*.o
+*.obj
+
+# 模型权重与平台二进制产物。
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+*.hbm
+*.engine
+*.plan
+*.safetensors
+*.tflite
+*.pb
+
+# 数据集、校准样本与生成结果。
+data/
+dataset/
+datasets/
+calibration_data/
+results/
+runs/
+
+# 本地环境和私有配置。
+.env
+.env.*
+!.env.example
+*.local.yaml
+*.local.yml
+*.local.json
+
+# 临时文件。
+tmp/
+temp/
+*.tmp
+*.bak
