@@ -43,7 +43,7 @@ Original Model
 
 | Model | Task | Domain | J5 | J6P | X5 | S100 | ONNX | Quant | C++ | Benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YOLO11 | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| YOLO11s | 2D Object Detection | General | TBD | In Progress | TBD | TBD | In Progress | In Progress | TBD | TBD |
 | RT-DETR | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTMPose | Human Pose | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | ViT Small | Vision Transformer | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -60,11 +60,13 @@ V0.1 不预设不同平台共用 SDK、Compiler 或 Runtime。未知信息统一
 | Platform | Docker Image | SDK | Toolchain | Compiler | Runtime | BPU Architecture | march | Status |
 |---|---|---|---|---|---|---|---|---|
 | J5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| J6P | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| J6P | `openexplorer/ai_toolchain_ubuntu_22_j6_gpu:v3.9.1` | TBD | `hb_compile 3.5.16` | HBDK 4.11.11 | HBRT4 4.11.11 | Nash | `nash-p` | In Progress |
 | RDK X5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RDK S100 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
 平台环境记录要求见 [docs/platform_matrix.md](docs/platform_matrix.md)。
+
+各平台的容器必须从可追溯镜像或构建定义独立创建，不依赖其他开发者容器的可写层。J6P 当前环境说明和容器创建入口见 [docker/j6p/README.md](docker/j6p/README.md)。
 
 ## Models
 
@@ -77,7 +79,7 @@ V0.1 不预设不同平台共用 SDK、Compiler 或 Runtime。未知信息统一
 - Foundation AI / VLM：Qwen-VL
 - Audio / ASR：Whisper
 
-其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。模型目录当前只包含精简元数据，不包含权重、数据集或未经验证的部署实现。
+其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。YOLO11s 已开始 J6P 部署并完成无真实校准数据的编译冒烟测试；其他模型目录当前只包含精简元数据。仓库不提交权重、数据集或未经验证的大型产物。
 
 后续 Roadmap：
 

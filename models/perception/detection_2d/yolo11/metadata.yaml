@@ -1,8 +1,8 @@
-model: YOLO11
+model: YOLO11s
 task: detection_2d
-framework: TBD
-source: TBD
-version: TBD
+framework: PyTorch
+source: https://github.com/ultralytics/assets/releases/tag/v8.3.0
+version: v8.3.0
 license: TBD
 
 domains:
@@ -10,14 +10,14 @@ domains:
 
 platforms:
   j5: TBD
-  j6p: TBD
+  j6p: In Progress
   x5: TBD
   s100: TBD
 
 deployment:
-  onnx: TBD
+  onnx: In Progress
   quantization: TBD
-  compile: TBD
+  compile: In Progress
   python_runtime: TBD
   cpp_runtime: TBD
   accuracy: TBD

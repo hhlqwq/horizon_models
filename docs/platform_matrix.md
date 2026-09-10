@@ -7,7 +7,7 @@ J5、J6P、RDK X5 和 RDK S100 分别维护独立的 Docker / Toolchain 环境�
 | Platform | Docker Image | SDK | Toolchain | Compiler | Runtime | Python | PyTorch | BPU Architecture | march | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
 | J5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| J6P | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| J6P | `openexplorer/ai_toolchain_ubuntu_22_j6_gpu:v3.9.1` | TBD | `hb_compile 3.5.16` | HBDK 4.11.11 | HBRT4 4.11.11 | 3.10.12 | 2.8.0+cu128 | Nash | `nash-p` | In Progress |
 | RDK X5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RDK S100 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 

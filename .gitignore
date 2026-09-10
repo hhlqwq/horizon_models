@@ -60,6 +60,7 @@ runs/
 .env
 .env.*
 !.env.example
+AGENTS.local.md
 *.local.yaml
 *.local.yml
 *.local.json

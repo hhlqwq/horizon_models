@@ -27,7 +27,7 @@ ONNX 导出成功、Compiler 编译成功、模拟器成功或官方文档声称
 
 | Model | Task | Domain | J5 | J6P | X5 | S100 | ONNX | Quant | C++ | Benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YOLO11 | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| YOLO11s | 2D Object Detection | General | TBD | In Progress | TBD | TBD | In Progress | In Progress | TBD | TBD |
 | RT-DETR | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTMPose | Human Pose | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | ViT Small | Vision Transformer | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
