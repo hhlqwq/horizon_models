@@ -59,6 +59,8 @@ target_link_libraries(
 target_compile_options(yolo11_j6p PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_options(
   yolo11_j6p PRIVATE "-Wl,-rpath-link,${J6P_DEPS_ROOT}/ucp/lib"
-                      "-Wl,-rpath-link,${J6P_DEPS_ROOT}/opencv/lib")
+                      "-Wl,-rpath-link,${J6P_DEPS_ROOT}/opencv/lib"
+                      "-Wl,--unresolved-symbols=ignore-in-shared-libs"
+                      "-Wl,-rpath,$ORIGIN/../lib")
 
 install(TARGETS yolo11_j6p RUNTIME DESTINATION bin)

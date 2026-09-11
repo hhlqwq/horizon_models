@@ -237,6 +237,8 @@ export J6P_DEPS_ROOT=/path/to/horizon_j6_open_explorer/samples/ucp_tutorial/deps
 bash "${MODEL_ROOT}/runtime/j6p/build.sh"
 ```
 
+官方 `libdnn.so` 会声明 `libbpu`、`libhbmem` 等板端系统库依赖。交叉链接仅解析本程序直接使用的 DNN、UCP 和 OpenCV 接口，并忽略共享库尚未解析的板端符号；交付时不要从 `deps_aarch64/appsdk` 捆绑旧版系统库，避免覆盖开发板已安装且与固件配套的 BPU Runtime。
+
 运行示例：
 
 ```bash

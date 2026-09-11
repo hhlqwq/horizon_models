@@ -69,6 +69,8 @@ echo "[2/3] 编译 yolo11_j6p."
   -L"${OPENCV_LIB_DIR}" \
   -Wl,-rpath-link,"${J6P_DEPS_ROOT}/ucp/lib" \
   -Wl,-rpath-link,"${OPENCV_LIB_DIR}" \
+  -Wl,--unresolved-symbols=ignore-in-shared-libs \
+  -Wl,-rpath,'$ORIGIN/../lib' \
   -ldnn \
   -lhbucp \
   -lopencv_world \
