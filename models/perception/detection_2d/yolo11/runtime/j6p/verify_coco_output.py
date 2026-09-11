@@ -21,6 +21,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, help="可选验证报告 JSON.")
     parser.add_argument("--score-atol", default=1e-6, type=float)
     parser.add_argument("--bbox-atol", default=1e-3, type=float)
+    parser.add_argument(
+        "--min-score",
+        default=0.0,
+        type=float,
+        help="仅比较分数严格大于该值的检测框.",
+    )
     return parser.parse_args()
 
 
@@ -46,8 +52,17 @@ def compare_outputs(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(f"COCO 标注中不存在 image_id={args.image_id}.")
     image_width, image_height = image_sizes[args.image_id]
 
-    actual = cpp_result["detections"]
-    expected = [item for item in reference if int(item["image_id"]) == args.image_id]
+    actual = [
+        item
+        for item in cpp_result["detections"]
+        if float(item["score"]) > args.min_score
+    ]
+    expected = [
+        item
+        for item in reference
+        if int(item["image_id"]) == args.image_id
+        and float(item["score"]) > args.min_score
+    ]
     if len(actual) != len(expected):
         raise AssertionError(
             f"检测数量不一致: C++={len(actual)}, Python={len(expected)}."
@@ -101,6 +116,7 @@ def compare_outputs(args: argparse.Namespace) -> dict[str, Any]:
         "detection_count": len(actual),
         "score_atol": args.score_atol,
         "bbox_atol": args.bbox_atol,
+        "min_score": args.min_score,
         "max_score_error": max_score_error,
         "max_bbox_error": max_bbox_error,
     }
