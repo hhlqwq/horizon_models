@@ -19,6 +19,6 @@ deployment:
   quantization: Verified
   compile: Verified
   python_runtime: Verified
-  cpp_runtime: In Progress
+  cpp_runtime: Verified
   accuracy: Verified
   benchmark: Verified

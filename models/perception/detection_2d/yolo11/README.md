@@ -11,7 +11,7 @@ YOLO11 是本仓库首批 2D 目标检测模型之一，用于建立从 PyTorch�
 - 当前目标平台：J6P，`march=nash-p`。
 - Raw6 ONNX、真实校准编译、Python RPC Runtime、COCO 精度和单核 Benchmark 已完成真实验证。
 - J6P INT8 mAP50-95 相对 FP32 下降 0.00813，满足不超过 0.01 的验收门槛。
-- 仓库自有 J6P C++ Runtime：In Progress。源码和构建入口已经建立，真实编译与板端输出一致性尚待匹配版本的官方 OE UCP 开发依赖。
+- 仓库自有 J6P C++ Runtime：Verified。已完成官方 OE 依赖交叉编译、真实板端运行、Raw6/检测结果一致性和进程内 Benchmark。
 
 ## 2026-09-11 Raw6 INT8 修复结果
 
@@ -294,16 +294,31 @@ python3 "${MODEL_ROOT}/runtime/j6p/verify_coco_output.py" \
 
 一致性结论必须同时注明 `--min-score`。当前纯 C++ NMS 与 Ultralytics/torchvision NMS 在低阈值密集候选上可能存在保留次序差异；生产阈值验证不能外推为 `conf=0.001` 下全部 300 个候选逐项一致。
 
-程序按 HBM 返回的 byte stride 访问输入输出，避免把物理 padding 当成有效输出。当前只接受固定的 `1x3x640x640` float32 输入和六路 float32 Raw6 输出；接口属性不匹配时立即失败。正式更新为 `Verified` 前，仍需完成以下门槛：
+程序按 HBM 返回的 byte stride 访问输入输出，避免把物理 padding 当成有效输出。当前只接受固定的 `1x3x640x640` float32 输入和六路 float32 Raw6 输出；接口属性不匹配时立即失败。
 
-1. 使用与当前 J6P Runtime 匹配的官方 `deps_aarch64` 完成 AArch64 交叉编译；
-2. 在真实 J6P 上加载当前 HBM 并运行；
-3. 固定输入下逐路比较 C++ 与 Python RPC 的有效输出；
-4. 比较最终检测框、分数和类别，并完成端到端 Benchmark。
+### 2026-09-11 C++ Runtime 真实 J6P 验证
+
+测试使用当前 Raw6 INT8 HBM、官方 OpenExplorer v3.9.1 `deps_aarch64`、UCP 3.15.8 和开发板 `libbpu-runtime 2.2.11~j6p`。固定输入为 COCO `image_id=139`。
+
+| Check | Result |
+|---|---:|
+| AArch64 Cross Compile | Passed |
+| HBM Load / Real BPU Run | Passed |
+| Raw6 Element-wise Parity | 6/6 outputs, 1,209,600/1,209,600 exact, `atol=0` |
+| Detection Parity at `conf=0.25` | 14/14, class and score exact |
+| Detection Max BBox Error | 0.0004727 px |
+| C++ BPU Inference Mean | 2.926 ms |
+| C++ CPU Postprocess Mean | 22.519 ms |
+| C++ Inference + Postprocess Mean | 25.447 ms |
+| C++ Inference + Postprocess FPS | 39.30 |
+
+C++ Benchmark 在同一进程内加载 HBM 一次，预热 10 次、正式运行 100 次，使用 `conf=0.25`、NMS IoU 0.7 和 `max_det=300`。上述端到端数据不含图片读取、预处理、模型加载和 JSON 写入。它与前文只统计板端 BPU profile 的 2.085 ms 指标口径不同，不能直接互换。
+
+验证证据位于 Git 忽略的本地构建或临时目录。SHA-256：C++ ELF `24fad8209fa0ed411018bb5850d07d3f9bc689730c415c07289b17bacae226db`，Raw6 一致性报告 `a1f9c2336628b045fd86f75c45ff25e08287444923b14655ecc2c4ee44e1173d`，检测结果一致性报告 `737fa42f7b57336d80d28e4f9119bc06bec2f4eda893434744b88af2d94e32a8`，C++ Benchmark JSON `343af3f627e9c3f46edf45a9643def83f4bfa1054c8d6df3c9f70a26539df69d`。
 
 ## 验证边界
 
-Raw6 INT8 HBM 已完成真实 J6P 编译、运行、完整 COCO 输出正确性和 Benchmark 验证，并提供可复现脚本，因此 J6P 模型部署状态为 `Verified`。仓库自有 C++ Runtime 已进入开发阶段，但尚未完成官方依赖下的交叉编译、真实板端运行和输出一致性验证，独立保持 `In Progress`。
+Raw6 INT8 HBM 已完成真实 J6P 编译、运行、完整 COCO 输出正确性和 Benchmark 验证，并提供可复现脚本，因此 J6P 模型部署状态为 `Verified`。仓库自有 C++ Runtime 也已完成真实交叉编译、板端运行、Raw6/检测结果正确性和 Benchmark 验证，因此独立状态为 `Verified`。`conf=0.001` 下纯 C++ 与 torchvision NMS 的低分密集候选保留次序仍不宣称逐项一致；当前检测结果一致性结论限定为已验证的生产阈值 `conf=0.25`。
 
 ## 参考资料
 
