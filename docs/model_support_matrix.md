@@ -27,7 +27,7 @@ ONNX 导出成功、Compiler 编译成功、模拟器成功或官方文档声称
 
 | Model | Task | Domain | J5 | J6P | X5 | S100 | ONNX | Quant | C++ | Benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YOLO11s | 2D Object Detection | General | TBD | Verified | TBD | TBD | Verified | Verified | TBD | Verified |
+| YOLO11s | 2D Object Detection | General | TBD | Verified | TBD | TBD | Verified | Verified | In Progress | Verified |
 | RT-DETR | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTMPose | Human Pose | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | ViT Small | Vision Transformer | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -44,4 +44,4 @@ ONNX 导出成功、Compiler 编译成功、模拟器成功或官方文档声称
 
 YOLO11s 的 J6P 真实校准、板端精度和 Benchmark 记录见
 [`models/perception/detection_2d/yolo11/README.md`](../models/perception/detection_2d/yolo11/README.md)。
-Raw6 PTQ 的真实 J6P mAP50-95 相对 FP32 下降 0.00813，满足本模型不超过 0.01 的验收门槛，因此 J6P 和 Quant 更新为 `Verified`。仓库自有 C++ Runtime 仍为 `TBD`，不由平台状态替代。
+Raw6 PTQ 的真实 J6P mAP50-95 相对 FP32 下降 0.00813，满足本模型不超过 0.01 的验收门槛，因此 J6P 和 Quant 更新为 `Verified`。仓库自有 C++ Runtime 已建立源码和构建入口，但尚未取得匹配版本的官方 OE UCP 开发依赖并完成真实编译、运行及输出一致性验证，因此独立保持 `In Progress`。

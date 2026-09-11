@@ -43,7 +43,7 @@ Original Model
 
 | Model | Task | Domain | J5 | J6P | X5 | S100 | ONNX | Quant | C++ | Benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YOLO11s | 2D Object Detection | General | TBD | Verified | TBD | TBD | Verified | Verified | TBD | Verified |
+| YOLO11s | 2D Object Detection | General | TBD | Verified | TBD | TBD | Verified | Verified | In Progress | Verified |
 | RT-DETR | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTMPose | Human Pose | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | ViT Small | Vision Transformer | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -79,7 +79,7 @@ V0.1 不预设不同平台共用 SDK、Compiler 或 Runtime。未知信息统一
 - Foundation AI / VLM：Qwen-VL
 - Audio / ASR：Whisper
 
-其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。YOLO11s 已使用 Raw6 部署边界完成 J6P 真实 COCO 校准、HBM 编译、5000 张板端精度评估和单核 Benchmark，INT8 mAP50-95 相对 FP32 下降 0.00813。掉点分析见 [YOLO11s J6P INT8 精度掉点分析与修复](docs/yolo11_j6p_int8_accuracy_recovery.md)。仓库自有 C++ Runtime 仍为 `TBD`。其他模型目录当前只包含精简元数据。仓库不提交权重、数据集或大型产物。
+其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。YOLO11s 已使用 Raw6 部署边界完成 J6P 真实 COCO 校准、HBM 编译、5000 张板端精度评估和单核 Benchmark，INT8 mAP50-95 相对 FP32 下降 0.00813。掉点分析见 [YOLO11s J6P INT8 精度掉点分析与修复](docs/yolo11_j6p_int8_accuracy_recovery.md)。仓库自有 J6P C++ Runtime 已进入开发阶段，源码和构建入口已经建立，尚待使用与 Runtime 匹配的官方 OE `deps_aarch64` 完成真实交叉编译和板端输出验证，因此状态为 `In Progress`。其他模型目录当前只包含精简元数据。仓库不提交权重、数据集或大型产物。
 
 后续 Roadmap：
 

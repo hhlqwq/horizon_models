@@ -11,7 +11,7 @@ YOLO11 是本仓库首批 2D 目标检测模型之一，用于建立从 PyTorch�
 - 当前目标平台：J6P，`march=nash-p`。
 - Raw6 ONNX、真实校准编译、Python RPC Runtime、COCO 精度和单核 Benchmark 已完成真实验证。
 - J6P INT8 mAP50-95 相对 FP32 下降 0.00813，满足不超过 0.01 的验收门槛。
-- 仓库自有 C++ Runtime：TBD。当前板端验证使用工具链随附的 `hbm_infer 3.15.8` RPC Runtime。
+- 仓库自有 J6P C++ Runtime：In Progress。源码和构建入口已经建立，真实编译与板端输出一致性尚待匹配版本的官方 OE UCP 开发依赖。
 
 ## 2026-09-11 Raw6 INT8 修复结果
 
@@ -134,6 +134,12 @@ yolo11/
 ├── benchmark/
 │   └── j6p/
 │       └── benchmark_hbm.py
+├── runtime/
+│   └── j6p/
+│       ├── CMakeLists.txt
+│       ├── build.sh
+│       └── src/
+│           └── main.cc
 ├── metadata.yaml
 └── README.md
 ```
@@ -220,9 +226,40 @@ python3 "${MODEL_ROOT}/benchmark/j6p/benchmark_hbm.py" \
   --iterations 1000
 ```
 
+### J6P C++ Runtime
+
+C++ Runtime 使用官方 UCP/DNN API 加载 HBM，并在 CPU float32 中完成六路 Raw6 的 DFL、Sigmoid、三尺度解码和按类别 NMS。输入与 Python 精度评估保持一致：OpenCV `INTER_LINEAR`、居中 LetterBox、填充值 114、BGR 转 RGB、NCHW float32 和除以 255。
+
+构建必须使用与目标 Runtime 匹配的官方 OpenExplorer 发布包依赖，不能从其他开发者容器的私人挂载复制。将 `J6P_DEPS_ROOT` 指向 OE 发布包的 `samples/ucp_tutorial/deps_aarch64`：
+
+```bash
+export J6P_DEPS_ROOT=/path/to/horizon_j6_open_explorer/samples/ucp_tutorial/deps_aarch64
+bash "${MODEL_ROOT}/runtime/j6p/build.sh"
+```
+
+运行示例：
+
+```bash
+export LD_LIBRARY_PATH=/path/to/deployed/ucp/lib:${LD_LIBRARY_PATH:-}
+"${MODEL_ROOT}/runtime/j6p/build/yolo11_j6p" \
+  --model /path/to/yolo11s_640x640_nash_p_raw6_ptq.hbm \
+  --image /path/to/image.jpg \
+  --output /path/to/detections.json \
+  --conf 0.25 \
+  --iou 0.7 \
+  --max-det 300
+```
+
+程序按 HBM 返回的 byte stride 访问输入输出，避免把物理 padding 当成有效输出。当前只接受固定的 `1x3x640x640` float32 输入和六路 float32 Raw6 输出；接口属性不匹配时立即失败。正式更新为 `Verified` 前，仍需完成以下门槛：
+
+1. 使用与当前 J6P Runtime 匹配的官方 `deps_aarch64` 完成 AArch64 交叉编译；
+2. 在真实 J6P 上加载当前 HBM 并运行；
+3. 固定输入下逐路比较 C++ 与 Python RPC 的有效输出；
+4. 比较最终检测框、分数和类别，并完成端到端 Benchmark。
+
 ## 验证边界
 
-Raw6 INT8 HBM 已完成真实 J6P 编译、运行、完整 COCO 输出正确性和 Benchmark 验证，并提供可复现脚本，因此 J6P 模型部署状态为 `Verified`。仓库自有 C++ Runtime 尚未实现，仍单独保持 `TBD`。
+Raw6 INT8 HBM 已完成真实 J6P 编译、运行、完整 COCO 输出正确性和 Benchmark 验证，并提供可复现脚本，因此 J6P 模型部署状态为 `Verified`。仓库自有 C++ Runtime 已进入开发阶段，但尚未完成官方依赖下的交叉编译、真实板端运行和输出一致性验证，独立保持 `In Progress`。
 
 ## 参考资料
 
