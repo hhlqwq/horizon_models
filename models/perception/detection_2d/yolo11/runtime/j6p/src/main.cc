@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -32,9 +34,12 @@ struct Options {
   std::string model_path;
   std::string image_path;
   std::string output_path;
+  std::string dump_dir;
   float confidence = 0.25F;
   float iou_threshold = 0.7F;
   int max_detections = 300;
+  int warmup = 0;
+  int iterations = 1;
 };
 
 struct LetterboxInfo {
@@ -63,6 +68,14 @@ struct TensorView {
   int channels = 0;
   int height = 0;
   int width = 0;
+};
+
+struct RuntimeMetrics {
+  int warmup = 0;
+  int iterations = 0;
+  double inference_ms = 0.0;
+  double postprocess_ms = 0.0;
+  double total_ms = 0.0;
 };
 
 /** 检查 Horizon API 返回值并在失败时抛出异常. */
@@ -109,16 +122,23 @@ Options ParseArgs(int argc, char** argv) {
       options.image_path = require_value(argument);
     } else if (argument == "--output") {
       options.output_path = require_value(argument);
+    } else if (argument == "--dump-dir") {
+      options.dump_dir = require_value(argument);
     } else if (argument == "--conf") {
       options.confidence = ParseFloat(require_value(argument), argument);
     } else if (argument == "--iou") {
       options.iou_threshold = ParseFloat(require_value(argument), argument);
     } else if (argument == "--max-det") {
       options.max_detections = ParseInt(require_value(argument), argument);
+    } else if (argument == "--warmup") {
+      options.warmup = ParseInt(require_value(argument), argument);
+    } else if (argument == "--iterations") {
+      options.iterations = ParseInt(require_value(argument), argument);
     } else if (argument == "--help" || argument == "-h") {
       std::cout << "用法: yolo11_j6p --model MODEL.hbm --image IMAGE "
                    "--output detections.json [--conf 0.25] [--iou 0.7] "
-                   "[--max-det 300]\n";
+                   "[--max-det 300] [--warmup 0] [--iterations 1] "
+                   "[--dump-dir DIR]\n";
       std::exit(0);
     } else {
       throw std::invalid_argument("未知参数: " + argument);
@@ -130,8 +150,10 @@ Options ParseArgs(int argc, char** argv) {
   }
   if (options.confidence < 0.0F || options.confidence > 1.0F ||
       options.iou_threshold < 0.0F || options.iou_threshold > 1.0F ||
-      options.max_detections <= 0) {
-    throw std::invalid_argument("阈值必须位于 [0, 1], max-det 必须大于 0.");
+      options.max_detections <= 0 || options.warmup < 0 ||
+      options.iterations <= 0) {
+    throw std::invalid_argument(
+        "阈值必须位于 [0, 1], max-det/iterations 必须大于 0, warmup 不能小于 0.");
   }
   return options;
 }
@@ -418,6 +440,49 @@ float ReadFeature(const TensorView& view, int channel, int row, int column) {
   return *TensorAddress(const_cast<hbDNNTensor*>(view.tensor), coordinates);
 }
 
+/** 将六路有效输出按连续 NCHW float32 保存, 用于跨后端逐元素核对. */
+void DumpRawOutputs(const std::vector<hbDNNTensor>& outputs,
+                    const std::string& dump_dir) {
+  if (dump_dir.empty()) {
+    return;
+  }
+  std::filesystem::create_directories(dump_dir);
+  std::ofstream manifest(std::filesystem::path(dump_dir) / "manifest.json");
+  if (!manifest.is_open()) {
+    throw std::runtime_error("无法写入 Raw6 manifest: " + dump_dir);
+  }
+  manifest << "{\n  \"layout\": \"NCHW\",\n  \"dtype\": \"float32\",\n"
+           << "  \"outputs\": [\n";
+  for (std::size_t index = 0; index < outputs.size(); ++index) {
+    const TensorView view = BuildTensorView(outputs[index]);
+    const std::string filename = "output_" + std::to_string(index) + ".bin";
+    std::ofstream output(std::filesystem::path(dump_dir) / filename,
+                         std::ios::binary);
+    if (!output.is_open()) {
+      throw std::runtime_error("无法写入 Raw6 输出: " + filename);
+    }
+    for (int channel = 0; channel < view.channels; ++channel) {
+      for (int row = 0; row < view.height; ++row) {
+        for (int column = 0; column < view.width; ++column) {
+          const float value = ReadFeature(view, channel, row, column);
+          output.write(reinterpret_cast<const char*>(&value), sizeof(value));
+        }
+      }
+    }
+    if (!output.good()) {
+      throw std::runtime_error("Raw6 输出写入失败: " + filename);
+    }
+    manifest << "    {\"index\": " << index << ", \"file\": \""
+             << filename << "\", \"shape\": [1, " << view.channels << ", "
+             << view.height << ", " << view.width << "]}";
+    manifest << (index + 1 == outputs.size() ? "\n" : ",\n");
+  }
+  manifest << "  ]\n}\n";
+  if (!manifest.good()) {
+    throw std::runtime_error("Raw6 manifest 写入失败: " + dump_dir);
+  }
+}
+
 /** 稳定计算 Sigmoid. */
 float Sigmoid(float value) {
   if (value >= 0.0F) {
@@ -593,7 +658,8 @@ std::string EscapeJson(const std::string& value) {
 /** 将检测结果写为稳定、便于比较的 JSON. */
 void WriteDetections(const Options& options, const std::string& model_name,
                      const LetterboxInfo& image,
-                     const std::vector<Detection>& detections) {
+                     const std::vector<Detection>& detections,
+                     const RuntimeMetrics& metrics) {
   std::ofstream output(options.output_path);
   if (!output.is_open()) {
     throw std::runtime_error("无法写入结果文件: " + options.output_path);
@@ -606,6 +672,11 @@ void WriteDetections(const Options& options, const std::string& model_name,
          << image.original_width << "],\n"
          << "  \"confidence_threshold\": " << options.confidence << ",\n"
          << "  \"iou_threshold\": " << options.iou_threshold << ",\n"
+         << "  \"benchmark\": {\"warmup\": " << metrics.warmup
+         << ", \"iterations\": " << metrics.iterations
+         << ", \"inference_ms\": " << metrics.inference_ms
+         << ", \"postprocess_ms\": " << metrics.postprocess_ms
+         << ", \"total_ms\": " << metrics.total_ms << "},\n"
          << "  \"detections\": [\n";
   for (std::size_t index = 0; index < detections.size(); ++index) {
     const auto& detection = detections[index];
@@ -623,18 +694,60 @@ void WriteDetections(const Options& options, const std::string& model_name,
 
 /** 执行板端 YOLO11s Raw6 推理完整链路. */
 int Run(const Options& options) {
-  std::cout << "[1/5] 读取并预处理图片." << std::endl;
+  using Clock = std::chrono::steady_clock;
+  std::cout << "[1/6] 读取并预处理图片." << std::endl;
   const LetterboxInfo image = PrepareImage(options.image_path);
-  std::cout << "[2/5] 加载 J6P HBM." << std::endl;
+  std::cout << "[2/6] 加载 J6P HBM." << std::endl;
   J6pModel model(options.model_path);
   FillInputTensor(image, model.input());
-  std::cout << "[3/5] 提交真实 BPU 推理." << std::endl;
-  model.Infer();
-  std::cout << "[4/5] 执行 float32 Raw6 解码与 NMS." << std::endl;
-  const auto detections = DecodeRaw6(model.outputs(), image, options);
-  std::cout << "[5/5] 写入检测结果, 数量=" << detections.size() << "."
+  std::cout << "[3/6] 执行预热, 次数=" << options.warmup << "." << std::endl;
+  for (int index = 0; index < options.warmup; ++index) {
+    model.Infer();
+  }
+
+  std::cout << "[4/6] 执行推理与 Raw6 后处理, 次数=" << options.iterations
+            << "." << std::endl;
+  RuntimeMetrics metrics;
+  metrics.warmup = options.warmup;
+  metrics.iterations = options.iterations;
+  std::vector<Detection> detections;
+  double inference_total_ms = 0.0;
+  double postprocess_total_ms = 0.0;
+  const auto total_start = Clock::now();
+  const int progress_interval = std::max(1, options.iterations / 10);
+  for (int index = 0; index < options.iterations; ++index) {
+    const auto inference_start = Clock::now();
+    model.Infer();
+    const auto inference_end = Clock::now();
+    detections = DecodeRaw6(model.outputs(), image, options);
+    const auto postprocess_end = Clock::now();
+    inference_total_ms +=
+        std::chrono::duration<double, std::milli>(inference_end -
+                                                  inference_start)
+            .count();
+    postprocess_total_ms +=
+        std::chrono::duration<double, std::milli>(postprocess_end -
+                                                  inference_end)
+            .count();
+    if ((index + 1) % progress_interval == 0 ||
+        index + 1 == options.iterations) {
+      std::cout << "进度: " << index + 1 << "/" << options.iterations
+                << std::endl;
+    }
+  }
+  const auto total_end = Clock::now();
+  metrics.inference_ms = inference_total_ms / options.iterations;
+  metrics.postprocess_ms = postprocess_total_ms / options.iterations;
+  metrics.total_ms =
+      std::chrono::duration<double, std::milli>(total_end - total_start)
+          .count() /
+      options.iterations;
+
+  std::cout << "[5/6] 保存可选 Raw6 输出." << std::endl;
+  DumpRawOutputs(model.outputs(), options.dump_dir);
+  std::cout << "[6/6] 写入检测结果, 数量=" << detections.size() << "."
             << std::endl;
-  WriteDetections(options, model.model_name(), image, detections);
+  WriteDetections(options, model.model_name(), image, detections, metrics);
   return 0;
 }
 
