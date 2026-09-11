@@ -39,11 +39,11 @@ Original Model
 
 ## Model Support Matrix
 
-状态仅允许使用 `TBD`、`Planned`、`In Progress`、`Verified` 和 `Unsupported`。V0.1 尚未进行模型编译或真实开发板验证，因此所有支持状态均为 `TBD`。
+状态仅允许使用 `TBD`、`Planned`、`In Progress`、`Verified` 和 `Unsupported`。各阶段状态按真实编译、运行和测试证据独立更新。
 
 | Model | Task | Domain | J5 | J6P | X5 | S100 | ONNX | Quant | C++ | Benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YOLO11s | 2D Object Detection | General | TBD | In Progress | TBD | TBD | In Progress | In Progress | TBD | TBD |
+| YOLO11s | 2D Object Detection | General | TBD | Verified | TBD | TBD | Verified | Verified | TBD | Verified |
 | RT-DETR | 2D Object Detection | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RTMPose | Human Pose | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | ViT Small | Vision Transformer | General | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -60,7 +60,7 @@ V0.1 不预设不同平台共用 SDK、Compiler 或 Runtime。未知信息统一
 | Platform | Docker Image | SDK | Toolchain | Compiler | Runtime | BPU Architecture | march | Status |
 |---|---|---|---|---|---|---|---|---|
 | J5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| J6P | `openexplorer/ai_toolchain_ubuntu_22_j6_gpu:v3.9.1` | TBD | `hb_compile 3.5.16` | HBDK 4.11.11 | HBRT4 4.11.11 | Nash | `nash-p` | In Progress |
+| J6P | `openexplorer/ai_toolchain_ubuntu_22_j6_gpu:v3.9.1` | TBD | `hb_compile 3.5.16` | HBDK 4.11.11 | HBRT4 4.11.11 / libbpu 2.2.11~j6p | Nash | `nash-p` | In Progress |
 | RDK X5 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | RDK S100 | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
@@ -79,7 +79,7 @@ V0.1 不预设不同平台共用 SDK、Compiler 或 Runtime。未知信息统一
 - Foundation AI / VLM：Qwen-VL
 - Audio / ASR：Whisper
 
-其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。YOLO11s 已开始 J6P 部署并完成无真实校准数据的编译冒烟测试；其他模型目录当前只包含精简元数据。仓库不提交权重、数据集或未经验证的大型产物。
+其中 Qwen 和 Qwen-VL 的具体小型版本将在核对目标硬件能力后确定。YOLO11s 已使用 Raw6 部署边界完成 J6P 真实 COCO 校准、HBM 编译、5000 张板端精度评估和单核 Benchmark，INT8 mAP50-95 相对 FP32 下降 0.00813。掉点分析见 [YOLO11s J6P INT8 精度掉点分析与修复](docs/yolo11_j6p_int8_accuracy_recovery.md)。仓库自有 C++ Runtime 仍为 `TBD`。其他模型目录当前只包含精简元数据。仓库不提交权重、数据集或大型产物。
 
 后续 Roadmap：
 

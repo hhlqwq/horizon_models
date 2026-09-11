@@ -10,15 +10,15 @@ domains:
 
 platforms:
   j5: TBD
-  j6p: In Progress
+  j6p: Verified
   x5: TBD
   s100: TBD
 
 deployment:
-  onnx: In Progress
-  quantization: TBD
-  compile: In Progress
-  python_runtime: TBD
+  onnx: Verified
+  quantization: Verified
+  compile: Verified
+  python_runtime: Verified
   cpp_runtime: TBD
-  accuracy: TBD
-  benchmark: TBD
+  accuracy: Verified
+  benchmark: Verified
