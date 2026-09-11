@@ -257,6 +257,27 @@ export LD_LIBRARY_PATH=/path/to/deployed/ucp/lib:${LD_LIBRARY_PATH:-}
 
 `--warmup` 和 `--iterations` 用于在同一进程内复用 HBM，输出 JSON 同时记录平均 BPU 推理、CPU 后处理和二者合计耗时。`--dump-dir` 可选；启用后会把六路有效输出剔除物理 padding 后按连续 NCHW float32 保存，并生成 shape manifest，便于与 Python 后端逐元素比较。
 
+Python RPC 端使用相同输入导出 Raw6：
+
+```bash
+python3 "${MODEL_ROOT}/evaluation/dump_raw6.py" \
+  --model /path/to/yolo11s_640x640_nash_p_raw6_ptq.hbm \
+  --image /path/to/image.jpg \
+  --output /path/to/python_raw6_dump
+```
+
+逐元素核对两端 float32 输出：
+
+```bash
+python3 "${MODEL_ROOT}/runtime/j6p/verify_raw6.py" \
+  --cpp /path/to/cpp_raw6_dump \
+  --python /path/to/python_raw6_dump \
+  --atol 0 \
+  --output /path/to/raw6_parity_report.json
+```
+
+工具会先核对两端 `manifest.json`，再比较六个同名 `.bin` 的全部有效元素；不能只比较文件大小。
+
 使用相同阈值运行 C++ 与 Python 板端评估后，可逐项核对检测数量、COCO 类别、分数和坐标：
 
 ```bash

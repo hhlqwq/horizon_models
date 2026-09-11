@@ -257,7 +257,7 @@ class HbmBoardBackend:
         model_path: Path,
         host: str,
         username: str,
-        password: str,
+        password: str | None,
         remote_root: str,
     ) -> None:
         """创建板端服务、上传 HBM 并建立持久会话."""
