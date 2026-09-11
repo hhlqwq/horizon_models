@@ -268,6 +268,8 @@ python3 "${MODEL_ROOT}/runtime/j6p/verify_coco_output.py" \
   --output /path/to/cpp_parity_report.json
 ```
 
+一致性工具会按 COCO 图像尺寸规范化历史 `predictions.json` 中的边界框。`evaluate_coco.py` 已使用可写切片修复 PyTorch 高级索引导致的 `clamp_()` 未回写问题；新生成的评估结果会在保存前正确裁剪到原图范围。
+
 程序按 HBM 返回的 byte stride 访问输入输出，避免把物理 padding 当成有效输出。当前只接受固定的 `1x3x640x640` float32 输入和六路 float32 Raw6 输出；接口属性不匹配时立即失败。正式更新为 `Verified` 前，仍需完成以下门槛：
 
 1. 使用与当前 J6P Runtime 匹配的官方 `deps_aarch64` 完成 AArch64 交叉编译；

@@ -345,12 +345,12 @@ def restore_boxes(
     pad_top: int,
 ) -> torch.Tensor:
     """将 LetterBox 坐标还原到原图坐标."""
-    boxes[:, [0, 2]] -= pad_left
-    boxes[:, [1, 3]] -= pad_top
+    boxes[:, 0::2] -= pad_left
+    boxes[:, 1::2] -= pad_top
     boxes[:, :4] /= ratio
     height, width = original_shape
-    boxes[:, [0, 2]].clamp_(0, width)
-    boxes[:, [1, 3]].clamp_(0, height)
+    boxes[:, 0::2].clamp_(0, width)
+    boxes[:, 1::2].clamp_(0, height)
     return boxes
 
 

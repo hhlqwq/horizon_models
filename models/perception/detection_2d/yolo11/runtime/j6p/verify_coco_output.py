@@ -38,6 +38,13 @@ def compare_outputs(args: argparse.Namespace) -> dict[str, Any]:
     category_ids = sorted(int(item["id"]) for item in annotations["categories"])
     if len(category_ids) != 80:
         raise ValueError(f"预期 80 个 COCO 类别, 实际为 {len(category_ids)}.")
+    image_sizes = {
+        int(item["id"]): (int(item["width"]), int(item["height"]))
+        for item in annotations["images"]
+    }
+    if args.image_id not in image_sizes:
+        raise ValueError(f"COCO 标注中不存在 image_id={args.image_id}.")
+    image_width, image_height = image_sizes[args.image_id]
 
     actual = cpp_result["detections"]
     expected = [item for item in reference if int(item["image_id"]) == args.image_id]
@@ -66,7 +73,19 @@ def compare_outputs(args: argparse.Namespace) -> dict[str, Any]:
             raise AssertionError(f"第 {index} 项分数误差超限: {score_error}.")
 
         x1, y1, x2, y2 = (float(value) for value in actual_item["xyxy"])
-        expected_bbox = [float(value) for value in expected_item["bbox"]]
+        expected_x, expected_y, expected_width, expected_height = (
+            float(value) for value in expected_item["bbox"]
+        )
+        expected_x2 = min(max(expected_x + expected_width, 0.0), image_width)
+        expected_y2 = min(max(expected_y + expected_height, 0.0), image_height)
+        expected_x = min(max(expected_x, 0.0), image_width)
+        expected_y = min(max(expected_y, 0.0), image_height)
+        expected_bbox = [
+            expected_x,
+            expected_y,
+            max(0.0, expected_x2 - expected_x),
+            max(0.0, expected_y2 - expected_y),
+        ]
         actual_bbox = [x1, y1, max(0.0, x2 - x1), max(0.0, y2 - y1)]
         bbox_error = max(
             abs(actual_value - expected_value)
