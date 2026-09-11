@@ -257,6 +257,17 @@ export LD_LIBRARY_PATH=/path/to/deployed/ucp/lib:${LD_LIBRARY_PATH:-}
 
 `--warmup` 和 `--iterations` 用于在同一进程内复用 HBM，输出 JSON 同时记录平均 BPU 推理、CPU 后处理和二者合计耗时。`--dump-dir` 可选；启用后会把六路有效输出剔除物理 padding 后按连续 NCHW float32 保存，并生成 shape manifest，便于与 Python 后端逐元素比较。
 
+使用相同阈值运行 C++ 与 Python 板端评估后，可逐项核对检测数量、COCO 类别、分数和坐标：
+
+```bash
+python3 "${MODEL_ROOT}/runtime/j6p/verify_coco_output.py" \
+  --cpp /path/to/cpp_detections.json \
+  --reference /path/to/hbm_board_predictions.json \
+  --annotations /path/to/instances_val2017.json \
+  --image-id 139 \
+  --output /path/to/cpp_parity_report.json
+```
+
 程序按 HBM 返回的 byte stride 访问输入输出，避免把物理 padding 当成有效输出。当前只接受固定的 `1x3x640x640` float32 输入和六路 float32 Raw6 输出；接口属性不匹配时立即失败。正式更新为 `Verified` 前，仍需完成以下门槛：
 
 1. 使用与当前 J6P Runtime 匹配的官方 `deps_aarch64` 完成 AArch64 交叉编译；
