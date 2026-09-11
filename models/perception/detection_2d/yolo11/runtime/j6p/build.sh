@@ -17,7 +17,7 @@ if [[ ! -f "${J6P_DEPS_ROOT}/ucp/include/hobot/dnn/hb_dnn.h" ]]; then
   exit 2
 fi
 
-CXX_PATH="${CXX:-${TOOLCHAIN_ROOT}/bin/aarch64-none-linux-gnu-g++}"
+CXX_PATH="${J6P_CXX:-${TOOLCHAIN_ROOT}/bin/aarch64-none-linux-gnu-g++}"
 if [[ ! -x "${CXX_PATH}" ]]; then
   echo "错误: 未找到 AArch64 交叉编译器: ${CXX_PATH}" >&2
   exit 2
